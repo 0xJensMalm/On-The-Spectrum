@@ -1,0 +1,41 @@
+let lineSlider, bendSlider;
+let lineThickness = 2;
+let lineHeight = 300;
+let bgColor = 50;
+let colorPalette = ["#ff0000", "#00ff00", "#0000ff", "#ffff00", "#ff00ff"];
+
+function setup() {
+  createCanvas(600, 600);
+  lineSlider = createSlider(10, 200, 100, 1);
+  lineSlider.position(10, 10);
+  bendSlider = createSlider(-TWO_PI, TWO_PI, 0, 0.01); // Slider for bending
+  bendSlider.position(10, 40);
+}
+
+function draw() {
+  background(bgColor);
+  let numLines = lineSlider.value();
+  let bend = bendSlider.value();
+  let spacing = width / numLines;
+
+  for (let i = 0; i < numLines; i++) {
+    let gradientPosition = i / (numLines - 1);
+    let colorIndex = floor(gradientPosition * (colorPalette.length - 1));
+    let nextColorIndex = min(colorIndex + 1, colorPalette.length - 1);
+    let lerpAmt = gradientPosition * (colorPalette.length - 1) - colorIndex;
+    let col = lerpColor(
+      color(colorPalette[colorIndex]),
+      color(colorPalette[nextColorIndex]),
+      lerpAmt
+    );
+
+    let x = spacing * i;
+    let bendFactor = sin(bend * (i / numLines));
+    let yStart = (height - lineHeight) / 2 + bendFactor * 100; // Adjust 100 for more/less bend
+    let yEnd = yStart + lineHeight;
+
+    stroke(col);
+    strokeWeight(lineThickness);
+    line(x, yStart, x, yEnd);
+  }
+}
