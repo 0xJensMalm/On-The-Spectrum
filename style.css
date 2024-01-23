@@ -1,0 +1,28 @@
+body, html {
+    margin: 0;
+    padding: 0;
+    display: flex;
+    height: 100%;
+}
+
+#sidebar {
+    width: 200px;
+    background-color: #f0f0f0;
+    padding: 20px;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+}
+
+#canvas-container {
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: black;
+    padding: 20px;
+}
+
+canvas {
+    display: block;
+    margin: auto;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+}
