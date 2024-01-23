@@ -1,14 +1,14 @@
-let lineSlider, bendSlider;
-let lineThickness = 5;
+let lineSlider, bendSlider, oscButton, colorButton;
+let lineThickness = 2;
 let lineHeight = 300;
 let bgColor = 50;
 let colorPalette = ["#ff0000", "#00ff00", "#0000ff", "#ffff00", "#ff00ff"];
-
 let oscillate = false;
-let colorShift = false;
+let colorShift = false; // Flag for color shifting
+let oscillationMode = "continuous";
+let oscillationPeriod = 4000;
 let angle = 0;
-let angleIncrement = 0.0005; // Smaller value for slower oscillation
-let oscButton, colorButton;
+let angleIncrement = 0.01; // Adjust for oscillation speed
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
@@ -40,8 +40,18 @@ function toggleColorShift() {
 function draw() {
   background(bgColor);
   let numLines = lineSlider.value();
-  let bend = bendSlider.value();
   let spacing = width / numLines;
+
+  if (oscillate) {
+    bendSlider.value(sin(angle) * TWO_PI);
+    angle += angleIncrement;
+  }
+
+  if (colorShift && frameCount % 10 === 0) {
+    // Smoother color shift
+    let firstColor = colorPalette.shift();
+    colorPalette.push(firstColor);
+  }
 
   for (let i = 0; i < numLines; i++) {
     let gradientPosition = i / (numLines - 1);
@@ -55,26 +65,12 @@ function draw() {
     );
 
     let x = spacing * i;
-    let bendFactor = sin(bend * (i / numLines));
+    let bendFactor = sin(bendSlider.value() * (i / numLines));
     let yStart = (height - lineHeight) / 2 + bendFactor * 100; // Adjust 100 for more/less bend
     let yEnd = yStart + lineHeight;
 
     stroke(col);
     strokeWeight(lineThickness);
     line(x, yStart, x, yEnd);
-
-    if (oscillate) {
-      bendSlider.value(sin(angle) * TWO_PI);
-      angle += angleIncrement;
-    }
-
-    if (colorShift) {
-      // Shift the first color of the palette to the end
-      if (frameCount % 60 === 0) {
-        // Change every second
-        let firstColor = colorPalette.shift();
-        colorPalette.push(firstColor);
-      }
-    }
   }
 }
