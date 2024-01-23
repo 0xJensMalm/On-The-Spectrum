@@ -44,8 +44,10 @@ function updateColorShift() {
   if (colorShift) {
     colorShiftIndex += colorShiftSpeed;
     if (colorShiftIndex >= 1) {
+      // Cycle the first color to the end when the index completes a full loop
+      let firstColor = colorPalette.shift();
+      colorPalette.push(firstColor);
       colorShiftIndex = 0;
-      colorPalette.push(colorPalette.shift());
     }
   }
 }
@@ -59,10 +61,14 @@ function drawLines() {
 }
 
 function drawLine(index, totalLines, spacing) {
-  let gradientPosition = (index + colorShiftIndex) / totalLines;
-  let colorIndex = floor(gradientPosition * (colorPalette.length - 1));
-  let nextColorIndex = (colorIndex + 1) % colorPalette.length;
-  let lerpAmt = (gradientPosition * (colorPalette.length - 1)) % 1;
+  let numColors = colorPalette.length;
+  let colorStep = 1.0 / numColors;
+  let adjustedIndex = (index / totalLines + colorShiftIndex) % 1;
+  let colorPos = adjustedIndex / colorStep;
+  let colorIndex = floor(colorPos);
+  let nextColorIndex = (colorIndex + 1) % numColors;
+  let lerpAmt = colorPos - colorIndex;
+
   let col = lerpColor(
     color(colorPalette[colorIndex]),
     color(colorPalette[nextColorIndex]),
