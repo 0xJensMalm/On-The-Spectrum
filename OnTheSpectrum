@@ -1,15 +1,40 @@
 let lineSlider, bendSlider;
-let lineThickness = 2;
+let lineThickness = 5;
 let lineHeight = 300;
 let bgColor = 50;
 let colorPalette = ["#ff0000", "#00ff00", "#0000ff", "#ffff00", "#ff00ff"];
 
+let oscillate = false;
+let colorShift = false;
+let angle = 0;
+let angleIncrement = 0.0005; // Smaller value for slower oscillation
+let oscButton, colorButton;
+
 function setup() {
-  createCanvas(600, 600);
+  createCanvas(windowWidth, windowHeight);
   lineSlider = createSlider(10, 200, 100, 1);
   lineSlider.position(10, 10);
   bendSlider = createSlider(-TWO_PI, TWO_PI, 0, 0.01); // Slider for bending
   bendSlider.position(10, 40);
+  oscButton = createButton("Toggle Oscillation");
+  oscButton.position(10, 70);
+  oscButton.mousePressed(toggleOscillation);
+
+  colorButton = createButton("Toggle Color Shift");
+  colorButton.position(10, 100);
+  colorButton.mousePressed(toggleColorShift);
+}
+
+function windowResized() {
+  resizeCanvas(windowWidth, windowHeight);
+}
+
+function toggleOscillation() {
+  oscillate = !oscillate;
+}
+
+function toggleColorShift() {
+  colorShift = !colorShift;
 }
 
 function draw() {
@@ -37,5 +62,19 @@ function draw() {
     stroke(col);
     strokeWeight(lineThickness);
     line(x, yStart, x, yEnd);
+
+    if (oscillate) {
+      bendSlider.value(sin(angle) * TWO_PI);
+      angle += angleIncrement;
+    }
+
+    if (colorShift) {
+      // Shift the first color of the palette to the end
+      if (frameCount % 60 === 0) {
+        // Change every second
+        let firstColor = colorPalette.shift();
+        colorPalette.push(firstColor);
+      }
+    }
   }
 }
