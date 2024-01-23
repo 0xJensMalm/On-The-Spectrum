@@ -1,32 +1,88 @@
-let lineSlider, bendSlider;
-let lineThickness = 5;
+let lineSlider, bendSlider, oscButton, colorButton;
+let lineThickness = 2;
 let lineHeight = 300;
 let bgColor = 50;
 let colorPalette = ["#ff0000", "#00ff00", "#0000ff", "#ffff00", "#ff00ff"];
-
 let oscillate = false;
 let colorShift = false;
 let angle = 0;
-let angleIncrement = 0.0005; // Smaller value for slower oscillation
-let oscButton, colorButton;
+let angleIncrement = 0.01;
+let colorShiftSpeed = 0.005;
+let colorShiftIndex = 0;
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
-  lineSlider = createSlider(10, 200, 100, 1);
-  lineSlider.position(10, 10);
-  bendSlider = createSlider(-TWO_PI, TWO_PI, 0, 0.01); // Slider for bending
-  bendSlider.position(10, 40);
-  oscButton = createButton("Toggle Oscillation");
-  oscButton.position(10, 70);
-  oscButton.mousePressed(toggleOscillation);
-
-  colorButton = createButton("Toggle Color Shift");
-  colorButton.position(10, 100);
-  colorButton.mousePressed(toggleColorShift);
+  createControls();
 }
 
-function windowResized() {
-  resizeCanvas(windowWidth, windowHeight);
+function draw() {
+  background(bgColor);
+  updateOscillation();
+  updateColorShift();
+  drawLines();
+}
+
+function createControls() {
+  lineSlider = createSlider(10, 200, 100, 1).position(10, 10);
+  bendSlider = createSlider(-TWO_PI, TWO_PI, 0, 0.01).position(10, 40);
+  oscButton = createButton("Toggle Oscillation")
+    .position(10, 70)
+    .mousePressed(toggleOscillation);
+  colorButton = createButton("Toggle Color Shift")
+    .position(10, 100)
+    .mousePressed(toggleColorShift);
+}
+
+function updateOscillation() {
+  if (oscillate) {
+    bendSlider.value(sin(angle) * TWO_PI);
+    angle += angleIncrement;
+  }
+}
+
+function updateColorShift() {
+  if (colorShift) {
+    colorShiftIndex += colorShiftSpeed;
+    if (colorShiftIndex >= 1) {
+      // Cycle the first color to the end when the index completes a full loop
+      let firstColor = colorPalette.shift();
+      colorPalette.push(firstColor);
+      colorShiftIndex = 0;
+    }
+  }
+}
+
+function drawLines() {
+  let numLines = lineSlider.value();
+  let spacing = width / numLines;
+  for (let i = 0; i < numLines; i++) {
+    drawLine(i, numLines, spacing);
+  }
+}
+
+function drawLine(index, totalLines, spacing) {
+  let numColors = colorPalette.length;
+  let colorStep = 1.0 / numColors;
+  let adjustedIndex = (index / totalLines + colorShiftIndex) % 1;
+  let colorPos = adjustedIndex / colorStep;
+  let colorIndex = floor(colorPos);
+  let nextColorIndex = (colorIndex + 1) % numColors;
+  let lerpAmt = colorPos - colorIndex;
+
+  let col = lerpColor(
+    color(colorPalette[colorIndex]),
+    color(colorPalette[nextColorIndex]),
+    lerpAmt
+  );
+
+  let x = spacing * index;
+  let bendFactor = sin(bendSlider.value() * (index / totalLines));
+  let yStart = (height - lineHeight) / 2 + bendFactor * 100;
+  let yEnd = yStart + lineHeight;
+
+  stroke(col);
+  strokeWeight(lineThickness);
+  line(x, yStart, x, yEnd);
 }
 
 function toggleOscillation() {
@@ -37,44 +93,6 @@ function toggleColorShift() {
   colorShift = !colorShift;
 }
 
-function draw() {
-  background(bgColor);
-  let numLines = lineSlider.value();
-  let bend = bendSlider.value();
-  let spacing = width / numLines;
-
-  for (let i = 0; i < numLines; i++) {
-    let gradientPosition = i / (numLines - 1);
-    let colorIndex = floor(gradientPosition * (colorPalette.length - 1));
-    let nextColorIndex = min(colorIndex + 1, colorPalette.length - 1);
-    let lerpAmt = gradientPosition * (colorPalette.length - 1) - colorIndex;
-    let col = lerpColor(
-      color(colorPalette[colorIndex]),
-      color(colorPalette[nextColorIndex]),
-      lerpAmt
-    );
-
-    let x = spacing * i;
-    let bendFactor = sin(bend * (i / numLines));
-    let yStart = (height - lineHeight) / 2 + bendFactor * 100; // Adjust 100 for more/less bend
-    let yEnd = yStart + lineHeight;
-
-    stroke(col);
-    strokeWeight(lineThickness);
-    line(x, yStart, x, yEnd);
-
-    if (oscillate) {
-      bendSlider.value(sin(angle) * TWO_PI);
-      angle += angleIncrement;
-    }
-
-    if (colorShift) {
-      // Shift the first color of the palette to the end
-      if (frameCount % 60 === 0) {
-        // Change every second
-        let firstColor = colorPalette.shift();
-        colorPalette.push(firstColor);
-      }
-    }
-  }
+function windowResized() {
+  resizeCanvas(windowWidth, windowHeight);
 }
