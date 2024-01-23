@@ -4,29 +4,79 @@ let lineHeight = 300;
 let bgColor = 50;
 let colorPalette = ["#ff0000", "#00ff00", "#0000ff", "#ffff00", "#ff00ff"];
 let oscillate = false;
-let colorShift = false; // Flag for color shifting
-let oscillationMode = "continuous";
-let oscillationPeriod = 4000;
+let colorShift = false;
 let angle = 0;
-let angleIncrement = 0.01; // Adjust for oscillation speed
+let angleIncrement = 0.01;
+let colorShiftSpeed = 0.005;
+let colorShiftIndex = 0;
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
-  lineSlider = createSlider(10, 200, 100, 1);
-  lineSlider.position(10, 10);
-  bendSlider = createSlider(-TWO_PI, TWO_PI, 0, 0.01); // Slider for bending
-  bendSlider.position(10, 40);
-  oscButton = createButton("Toggle Oscillation");
-  oscButton.position(10, 70);
-  oscButton.mousePressed(toggleOscillation);
-
-  colorButton = createButton("Toggle Color Shift");
-  colorButton.position(10, 100);
-  colorButton.mousePressed(toggleColorShift);
+  createControls();
 }
 
-function windowResized() {
-  resizeCanvas(windowWidth, windowHeight);
+function draw() {
+  background(bgColor);
+  updateOscillation();
+  updateColorShift();
+  drawLines();
+}
+
+function createControls() {
+  lineSlider = createSlider(10, 200, 100, 1).position(10, 10);
+  bendSlider = createSlider(-TWO_PI, TWO_PI, 0, 0.01).position(10, 40);
+  oscButton = createButton("Toggle Oscillation")
+    .position(10, 70)
+    .mousePressed(toggleOscillation);
+  colorButton = createButton("Toggle Color Shift")
+    .position(10, 100)
+    .mousePressed(toggleColorShift);
+}
+
+function updateOscillation() {
+  if (oscillate) {
+    bendSlider.value(sin(angle) * TWO_PI);
+    angle += angleIncrement;
+  }
+}
+
+function updateColorShift() {
+  if (colorShift) {
+    colorShiftIndex += colorShiftSpeed;
+    if (colorShiftIndex >= 1) {
+      colorShiftIndex = 0;
+      colorPalette.push(colorPalette.shift());
+    }
+  }
+}
+
+function drawLines() {
+  let numLines = lineSlider.value();
+  let spacing = width / numLines;
+  for (let i = 0; i < numLines; i++) {
+    drawLine(i, numLines, spacing);
+  }
+}
+
+function drawLine(index, totalLines, spacing) {
+  let gradientPosition = (index + colorShiftIndex) / totalLines;
+  let colorIndex = floor(gradientPosition * (colorPalette.length - 1));
+  let nextColorIndex = (colorIndex + 1) % colorPalette.length;
+  let lerpAmt = (gradientPosition * (colorPalette.length - 1)) % 1;
+  let col = lerpColor(
+    color(colorPalette[colorIndex]),
+    color(colorPalette[nextColorIndex]),
+    lerpAmt
+  );
+
+  let x = spacing * index;
+  let bendFactor = sin(bendSlider.value() * (index / totalLines));
+  let yStart = (height - lineHeight) / 2 + bendFactor * 100;
+  let yEnd = yStart + lineHeight;
+
+  stroke(col);
+  strokeWeight(lineThickness);
+  line(x, yStart, x, yEnd);
 }
 
 function toggleOscillation() {
@@ -37,40 +87,6 @@ function toggleColorShift() {
   colorShift = !colorShift;
 }
 
-function draw() {
-  background(bgColor);
-  let numLines = lineSlider.value();
-  let spacing = width / numLines;
-
-  if (oscillate) {
-    bendSlider.value(sin(angle) * TWO_PI);
-    angle += angleIncrement;
-  }
-
-  if (colorShift && frameCount % 10 === 0) {
-    // Smoother color shift
-    let firstColor = colorPalette.shift();
-    colorPalette.push(firstColor);
-  }
-
-  for (let i = 0; i < numLines; i++) {
-    let gradientPosition = i / (numLines - 1);
-    let colorIndex = floor(gradientPosition * (colorPalette.length - 1));
-    let nextColorIndex = min(colorIndex + 1, colorPalette.length - 1);
-    let lerpAmt = gradientPosition * (colorPalette.length - 1) - colorIndex;
-    let col = lerpColor(
-      color(colorPalette[colorIndex]),
-      color(colorPalette[nextColorIndex]),
-      lerpAmt
-    );
-
-    let x = spacing * i;
-    let bendFactor = sin(bendSlider.value() * (i / numLines));
-    let yStart = (height - lineHeight) / 2 + bendFactor * 100; // Adjust 100 for more/less bend
-    let yEnd = yStart + lineHeight;
-
-    stroke(col);
-    strokeWeight(lineThickness);
-    line(x, yStart, x, yEnd);
-  }
+function windowResized() {
+  resizeCanvas(windowWidth, windowHeight);
 }
