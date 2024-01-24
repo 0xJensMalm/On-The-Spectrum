@@ -4,6 +4,10 @@ let lineSlider,
   colorButton,
   oscTypeSelect,
   paletteSelect;
+let oscSpeedSlider;
+let amplitudeSlider;
+let oscillationPhase = 0; // Phase of oscillation
+let lineWidthSlider;
 let lineThickness = 2;
 let lineHeight = 300;
 let bgColor = 50;
@@ -33,12 +37,12 @@ let colorShiftIndex = 0;
 function setup() {
   createCanvas(windowWidth, windowHeight);
   createControls();
-  oscTypeSelect = createSelect().position(150, 10);
+  oscTypeSelect = createSelect().position(10, 325);
   oscTypeSelect.option("sine");
   oscTypeSelect.option("cosine");
   oscTypeSelect.option("triangle");
 
-  paletteSelect = createSelect().position(150, 40);
+  paletteSelect = createSelect().position(10, 350);
   paletteSelect.option("Modern");
   paletteSelect.option("BW");
   paletteSelect.option("Rainbow");
@@ -52,45 +56,68 @@ function draw() {
   updateOscillation();
   updateColorShift();
   drawLines();
+
+  // Reset styles before drawing text
+  noStroke(); // Disable stroke for text
+  fill(255); // Set text color
+  textSize(12); // Set text size
+
+  // Display the values of the sliders
+  text(`Line Count: ${lineSlider.value()}`, 10, 25);
+  text(`Line Height: ${lineHeightSlider.value()}`, 10, 65);
+  text(`Line Width: ${lineWidthSlider.value()}`, 10, 105);
+  text(`Bend Amount: ${bendSlider.value().toFixed(2)}`, 10, 145);
+  text(`Amplitude: ${amplitudeSlider.value()}`, 10, 185);
+  text(`Oscillation Speed: ${oscSpeedSlider.value().toFixed(2)}`, 10, 225);
 }
 
 function createControls() {
   lineSlider = createSlider(10, 200, 100, 1).position(10, 10);
-  bendSlider = createSlider(-TWO_PI, TWO_PI, 0, 0.01).position(10, 40);
+  lineHeightSlider = createSlider(50, 500, 300, 10).position(10, 50);
+  lineWidthSlider = createSlider(1, 10, 2, 1).position(10, 90);
+  amplitudeSlider = createSlider(0, 75, 1, 1).position(10, 130); // Max amplitude 0 to 75
+  bendSlider = createSlider(-75, 75, 0, 0.005).position(10, 170); // Bend range -75 to 75
+  oscSpeedSlider = createSlider(0, 0.2, 0.01, 0.01).position(10, 210);
   oscButton = createButton("Toggle Oscillation")
-    .position(10, 100)
+    .position(10, 250)
     .mousePressed(toggleOscillation);
   colorButton = createButton("Toggle Color Shift")
-    .position(10, 130)
+    .position(10, 290)
     .mousePressed(toggleColorShift);
-  lineHeightSlider = createSlider(50, 500, 300, 10).position(10, 70); // Line height slider
 }
 
 function updateOscillation() {
   if (oscillate) {
-    let oscillationType = oscTypeSelect.value();
-    switch (oscillationType) {
-      case "sine":
-        applySineOscillation();
-        break;
-      case "cosine":
-        applyCosineOscillation();
-        break;
-      case "triangle":
-        applyTriangleOscillation();
-        break;
+    let maxAmplitude = amplitudeSlider.value();
+    let minAmplitude = -maxAmplitude;
+    let speed = oscSpeedSlider.value();
+
+    // Oscillation logic
+    if (oscillationPhase === 0) {
+      bendSlider.value(bendSlider.value() + speed);
+      if (bendSlider.value() >= maxAmplitude) {
+        oscillationPhase = 1;
+      }
+    } else {
+      bendSlider.value(bendSlider.value() - speed);
+      if (bendSlider.value() <= minAmplitude) {
+        oscillationPhase = 0;
+      }
     }
+
+    // Constrain the bend slider value within its range
+    bendSlider.value(constrain(bendSlider.value(), minAmplitude, maxAmplitude));
   }
 }
 
 function applySineOscillation() {
-  bendSlider.value((sin(angle) + 1) * PI - TWO_PI); // Sine oscillation adjusted
-  angle += angleIncrement;
+  bendSlider.value((sin(angle) + 1) * PI - TWO_PI);
+  angle += oscSpeedSlider.value();
 }
 
 function applyCosineOscillation() {
   bendSlider.value((cos(angle) + 1) * PI - TWO_PI); // Cosine oscillation adjusted
-  angle += angleIncrement;
+  angle += oscSpeedSlider.value();
 }
 
 function applyTriangleOscillation() {
@@ -98,7 +125,7 @@ function applyTriangleOscillation() {
   let triangleWave =
     abs(4 * (angle / TWO_PI - floor(angle / TWO_PI + 0.5))) - 1;
   bendSlider.value(triangleWave * TWO_PI - PI);
-  angle += angleIncrement;
+  angle += oscSpeedSlider.value();
 }
 
 function updateColorShift() {
@@ -117,14 +144,13 @@ function drawLine(index, totalLines, spacing) {
   let colorStep = 1.0 / numColors;
   let adjustedIndex = (index / totalLines + colorShiftIndex) % 1;
   let colorPos = adjustedIndex / colorStep;
-  let colorIndex = floor(colorPos) % numColors; // Safeguard against invalid index
+  let colorIndex = floor(colorPos) % numColors;
   let nextColorIndex = (colorIndex + 1) % numColors;
   let lerpAmt = colorPos - colorIndex;
 
   let col1 = colorPalette[colorIndex];
   let col2 = colorPalette[nextColorIndex];
   if (col1 && col2) {
-    // Check if both colors are valid
     let col = lerpColor(color(col1), color(col2), lerpAmt);
 
     let x = spacing * index;
@@ -133,7 +159,7 @@ function drawLine(index, totalLines, spacing) {
     let yEnd = yStart + lineHeight;
 
     stroke(col);
-    strokeWeight(lineThickness);
+    strokeWeight(lineWidthSlider.value()); // Set line width based on the slider
     line(x, yStart, x, yEnd);
   }
 }
