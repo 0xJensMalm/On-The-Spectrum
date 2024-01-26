@@ -75,8 +75,8 @@ function createControls() {
   lineSlider = createSlider(10, 200, 100, 1).position(10, 10);
   lineHeightSlider = createSlider(50, 500, 300, 10).position(10, 50);
   lineWidthSlider = createSlider(1, 10, 2, 1).position(10, 90);
-  amplitudeSlider = createSlider(0, 75, 1, 1).position(10, 130); // Max amplitude 0 to 75
-  bendSlider = createSlider(-75, 75, 0, 0.005).position(10, 170); // Bend range -75 to 75
+  bendSlider = createSlider(-75, 75, 0, 0.005).position(10, 130); // Bend range -75 to 75
+  amplitudeSlider = createSlider(0, 75, 1, 1).position(10, 170); // Max amplitude 0 to 75
   oscSpeedSlider = createSlider(0, 0.2, 0.01, 0.01).position(10, 210);
   oscButton = createButton("Toggle Oscillation")
     .position(10, 250)
@@ -182,7 +182,7 @@ function toggleColorShift() {
 }
 
 function windowResized() {
-  resizeCanvas(windowWidth, windowHeight);
+  resizeCanvas(windowWidth - 400, windowHeight); // Adjust based on navbars' width
 }
 function updatePalette() {
   colorPalette = colorPalettes[paletteSelect.value()];
